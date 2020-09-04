@@ -1,0 +1,91 @@
+/*
+    These are the credentials used to login to CCP
+*/
+
+variable "username" {
+    type = "string"
+    default="my_ccp_admin_account"
+}
+
+variable "password" {
+    type = "string"
+    default="my_ccp_password"
+}
+
+variable "base_url" {
+    type = "string"
+    default="https://my_ccp_url:ccp_port"
+}
+
+provider "ccp" {
+    username = "${var.username}"
+    password = "${var.password}"
+    base_url = "${var.base_url}"
+}
+
+/*
+    This will create a new local user within CCP
+
+resource "ccp_user" "user" {
+    firstname       = "Terrafom"
+    lastname        = "Plugin"
+    password        = "myPassword"
+    username        = "builtByTerraform"
+    role            = "Administrator"
+}
+
+*/
+
+
+/*
+    This will create a new cluster within CCP using the Calico CNI
+*/
+
+resource "ccp_cluster" "cluster" {
+  provider_client_config_uuid = "1abc2-1abc2-1abc2-1abc2" //Calico provider
+  name                        = "builtbyterraform"
+  kubernetes_version          = "1.16.3"
+  loadbalancer_ip_num         = 3
+  type                        = "vsphere"
+  ip_allocation_method = "ccpnet"
+  subnet_uuid            = "d7a6f267-8545-4875-85c5-bf5b7f46b4f0" 
+  infra {
+      datacenter    = "vcenter-datacenter-name"
+      cluster       = "vcenter-cluster-name"
+      datastore     = "vcenter-datastore-name"
+      resource_pool = " "
+      networks = ["vcenter-network-name"] 
+
+  }
+  master_node_pool {
+         name = "master-group"
+         size = 1
+         gpus=[]
+         vcpus    = 2
+         memory   = 16384
+         template = "ccp-tenant-image-1.16.3-ubuntu18-6.1.1"
+         ssh_user = "admin"
+         ssh_key = "ssh-ed25519 AAAAC3fsdhSDFSDFbildsfDFSSDFbsdfFSDFSD"
+         kubernetes_version = "1.16.3"
+
+   }
+  worker_node_pools     {
+         name = "node-group"
+         size = 4
+         gpus=[]
+         vcpus    = 2
+         memory   = 16384
+         template = "ccp-tenant-image-1.16.3-ubuntu18-6.1.1"
+         ssh_user = "admin"
+         ssh_key = "ssh-ed25519 AAAAC3fsdhSDFSDFbildsfDFSSDFbsdfFSDFSD"
+         kubernetes_version = "1.16.3"
+   }
+   network_plugin {
+      name ="calico"
+      details {
+        pod_cidr = "192.168.0.0/16"
+      }
+   }
+}
+
+
