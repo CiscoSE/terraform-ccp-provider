@@ -18,7 +18,7 @@ package main
 import (
 	"errors"
 
-	"github.com/ccp-client-library/ccp"
+	"github.com/CiscoSE/ccp-client-library/ccp"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 

@@ -18,7 +18,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/ccp-client-library/ccp"
+	"github.com/CiscoSE/ccp-client-library/ccp"
 )
 
 type Config struct {
