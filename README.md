@@ -264,6 +264,9 @@ https://www.terraform.io/docs/extend/how-terraform-works.html#discovery
 
 5. Ready to start planning and applying.
 
+**NOTE:** `versions.tf` contains the provider reference for the In-House CCP Provider. It is in the format ["[hostname/][namespace/]name"](https://www.terraform.io/upgrade-guides/0-13.html), where hostname is `cisco.com`, namespace is `ccp`, and name is `ccp`
+
+
 ## Guidelines and Limitations
 
 
