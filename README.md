@@ -240,6 +240,10 @@ resource "ccp_cluster" "cluster" {
 
 `git clone https://github.com/conmurphy/terraform-provider-ccp.git`
 
+2. Download CCP Client Library
+
+`go get "github.com/CiscoSE/ccp-client-library/ccp"`
+
 2. From within the newly cloned directory, build the binary
 
 `go build -o terraform-provider-ccp_v0.1.0`
