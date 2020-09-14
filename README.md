@@ -236,19 +236,19 @@ resource "ccp_cluster" "cluster" {
 
 ## Building and Installation
 
-1. Clone provider repo to local machine.
-
-`git clone https://github.com/conmurphy/terraform-provider-ccp.git`
-
-2. Download CCP Client Library
+1. Download CCP Client Library
 
 `go get "github.com/CiscoSE/ccp-client-library/ccp"`
 
-2. From within the newly cloned directory, build the binary
+2. Clone provider repo to local machine.
+
+`git clone https://github.com/conmurphy/terraform-provider-ccp.git`
+
+3. From within the newly cloned `terraform-provider-ccp` directory, build the binary
 
 `go build -o terraform-provider-ccp_v0.1.0`
 
-3. Copy binary to local Terraform plugin directory.
+4. Copy binary to local Terraform plugin directory.
 
 As per the following document, third-party plugins should usually be installed in the user plugins directory, which is located at `~/.terraform.d/plugins`. 
 
@@ -258,11 +258,11 @@ https://www.terraform.io/docs/extend/how-terraform-works.html#discovery
 
 `cp terraform-provider-ccp_v0.1.0 ~/.terraform.d/plugins/cisco.com/ccp/ccp/0.1.0/darwin_amd64`
 
-4. Initialise Terraform
+5. Initialise Terraform
 
 ` terraform init`
 
-5. Ready to start planning and applying.
+6. Ready to start planning and applying.
 
 **NOTE:** `versions.tf` contains the provider reference for the In-House CCP Provider. It is in the format ["[hostname/][namespace/]name"](https://www.terraform.io/upgrade-guides/0-13.html), where hostname is `cisco.com`, namespace is `ccp`, and name is `ccp`
 
