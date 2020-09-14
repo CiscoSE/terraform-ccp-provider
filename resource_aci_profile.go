@@ -15,10 +15,13 @@ or implied.*/
 
 package main
 
+// Download the latest ccp-client-library to your Git source directory
+// go get -u github.com/CiscoSE/ccp-client-library
+
 import (
 	"errors"
 
-	"github.com/ccp-client-library/ccp"
+	"github.com/CiscoSE/ccp-client-library/ccp"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 

@@ -15,10 +15,13 @@ or implied.*/
 
 package main
 
+// Download the latest ccp-client-library to your Git source directory
+// go get -u github.com/CiscoSE/ccp-client-library
+
 import (
 	"fmt"
 
-	"github.com/ccp-client-library/ccp"
+	"github.com/CiscoSE/ccp-client-library/ccp"
 )
 
 type Config struct {
