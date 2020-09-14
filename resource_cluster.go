@@ -674,34 +674,37 @@ func resourceClusterUpdate(d *schema.ResourceData, m interface{}) error {
 
 	client := m.(*ccp.Client)
 
-	newCluster := ccp.Cluster{
-		LoadBalancerIPNum: ccp.Int64(int64(d.Get("loadbalancer_ip_num").(int))),
-	}
+	networkPlugins := d.Get("network_plugin").([]interface{})
+	networkPluginsKeys := networkPlugins[0].(map[string]interface{})
 
-	cluster, err := client.PatchCluster(&newCluster, d.Get("uuid").(string))
+	// You can't change the LoadBalancerIPNum in the ACI CNI so it makes sense to just run this when using Calico
+	if networkPluginsKeys["name"].(string) == "calico" {
 
-	if err != nil {
-		return errors.New(err.Error())
-	}
+		newCluster := ccp.Cluster{
+			LoadBalancerIPNum: ccp.Int64(int64(d.Get("loadbalancer_ip_num").(int))),
+		}
 
-	cluster, err = client.GetClusterByName(d.Get("name").(string))
+		_, err := client.PatchCluster(&newCluster, d.Get("uuid").(string))
 
-	if err != nil {
-		return errors.New("UNABLE TO RETRIEVE DETAILS FOR CLUSTER: " + d.Get("name").(string))
+		if err != nil {
+			return errors.New(err.Error())
+		}
+
 	}
 
 	// only supporting 1 worker node pool (worker_node_pools.0) at the moment
 
 	if d.HasChange("worker_node_pools.0.size") {
 		_, newValue := d.GetChange("worker_node_pools.0.size")
-		cluster, err = client.ScaleCluster(d.Get("uuid").(string), d.Get("worker_node_pools.0.name").(string), newValue.(int))
+		_, err := client.ScaleCluster(d.Get("uuid").(string), d.Get("worker_node_pools.0.name").(string), newValue.(int))
+
+		if err != nil {
+			return errors.New("UNABLE TO RETRIEVE DETAILS FOR CLUSTER: " + d.Get("name").(string))
+		}
+
 	}
 
-	if err != nil {
-		return errors.New("UNABLE TO RETRIEVE DETAILS FOR CLUSTER: " + d.Get("name").(string))
-	}
-
-	cluster, err = client.GetClusterByName(d.Get("name").(string))
+	cluster, err := client.GetClusterByName(d.Get("name").(string))
 
 	if err != nil {
 		return errors.New("UNABLE TO RETRIEVE DETAILS FOR CLUSTER: " + d.Get("name").(string))
