@@ -46,6 +46,11 @@ func Provider() *schema.Provider {
 			"ccp_cluster":     resourceCluster(),
 			"ccp_aci_profile": resourceACIProfile(),
 		},
+		DataSourcesMap: map[string]*schema.Resource{
+			"ccp_aci_profile":      datasourceACIProfile(),
+			"ccp_provider_vsphere": datasourceProviderVsphere(),
+			"ccp_provider_network": datasourceProviderNetwork(),
+		},
 		ConfigureFunc: providerConfigure,
 	}
 }
