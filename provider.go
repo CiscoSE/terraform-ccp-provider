@@ -45,6 +45,7 @@ func Provider() *schema.Provider {
 			"ccp_user":        resourceUser(),
 			"ccp_cluster":     resourceCluster(),
 			"ccp_aci_profile": resourceACIProfile(),
+			"ccp_addons":      resourceAddons(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"ccp_aci_profile":      datasourceACIProfile(),
