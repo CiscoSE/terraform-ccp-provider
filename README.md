@@ -246,7 +246,7 @@ resource "ccp_cluster" "cluster" {
 
 3. From within the newly cloned `terraform-provider-ccp` directory, build the binary
 
-`go build -o terraform-provider-ccp_v0.1.0`
+`go build -o terraform-provider-ccp_v1.0.0`
 
 4. Copy binary to local Terraform plugin directory.
 
@@ -256,9 +256,9 @@ As per the following document, third-party plugins should usually be installed i
 
 https://www.terraform.io/docs/extend/how-terraform-works.html#discovery
 
-`cp terraform-provider-ccp_v0.1.0 ~/.terraform.d/plugins/cisco.com/ccp/ccp/0.1.0/darwin_amd64`
+`cp terraform-provider-ccp_v1.0.0 ~/.terraform.d/plugins/cisco.com/ccp/ccp/1.0.0/darwin_amd64`
 
-**NOTE:** The example `copy` above is using the CCP provider version `0.1.0`. If you are using a different version remember to change the name when running `go build -o terraform-provider-ccp_v`. You also need to create a new folder in `~/.terraform.d/plugins/cisco.com/ccp/ccp/` for this version. 
+**NOTE:** The example `copy` above is using the CCP provider version `1.0.0`. If you are using a different version remember to change the name when running `go build -o terraform-provider-ccp_v`. You also need to create a new folder in `~/.terraform.d/plugins/cisco.com/ccp/ccp/` for this version. 
 
 5. Initialise Terraform
 
