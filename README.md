@@ -258,7 +258,7 @@ https://www.terraform.io/docs/extend/how-terraform-works.html#discovery
 
 `cp terraform-provider-ccp_v0.1.0 ~/.terraform.d/plugins/cisco.com/ccp/ccp/0.1.0/darwin_amd64`
 
-NOTE: The example `copy` command above is using the CCP provider version `0.1.0`. If using a different version to what is shown remember to change the name in the `go build -o terraform-provider-ccp` command. Also create a new folder in `~/.terraform.d/plugins/cisco.com/ccp/ccp/` for this version. 
+**NOTE:** The example `copy` above is using the CCP provider version `0.1.0`. If you are using a different version remember to change the name when running `go build -o terraform-provider-ccp_v`. You also need to create a new folder in `~/.terraform.d/plugins/cisco.com/ccp/ccp/` for this version. 
 
 5. Initialise Terraform
 
@@ -266,7 +266,7 @@ NOTE: The example `copy` command above is using the CCP provider version `0.1.0`
 
 6. Ready to start planning and applying.
 
-**NOTE:** `versions.tf` contains the provider reference for the In-House CCP Provider. It is in the format ["[hostname/][namespace/]name"](https://www.terraform.io/upgrade-guides/0-13.html), where hostname is `cisco.com`, namespace is `ccp`, and name is `ccp`
+**NOTE:** `versions.tf` contains the provider reference for the In-House CCP Provider. It is in the format `["[hostname/][namespace/]name"]`(https://www.terraform.io/upgrade-guides/0-13.html), where hostname is `cisco.com`, namespace is `ccp`, and name is `ccp`
 
 
 ## Guidelines and Limitations
