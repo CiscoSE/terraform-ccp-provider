@@ -238,7 +238,7 @@ resource "ccp_cluster" "cluster" {
 
 1. Download CCP Client Library
 
-`go get "github.com/CiscoSE/ccp-client-library/ccp"`
+`go get -u "github.com/CiscoSE/ccp-client-library/ccp"`
 
 2. Clone provider repo to local machine.
 
