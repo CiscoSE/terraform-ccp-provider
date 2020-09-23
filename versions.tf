@@ -3,7 +3,7 @@ terraform {
   required_providers {
     ccp = {
       source  = "cisco.com/ccp/ccp"
-      version = "0.1.0"
+      version = "1.0.0"
     }
   }
 }
