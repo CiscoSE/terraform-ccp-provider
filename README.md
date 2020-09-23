@@ -258,6 +258,8 @@ https://www.terraform.io/docs/extend/how-terraform-works.html#discovery
 
 `cp terraform-provider-ccp_v0.1.0 ~/.terraform.d/plugins/cisco.com/ccp/ccp/0.1.0/darwin_amd64`
 
+NOTE: The example `copy` command above is using the CCP provider version `0.1.0`. If using a different version to what is shown remember to change the name in the `go build -o terraform-provider-ccp` command. Also create a new folder in `~/.terraform.d/plugins/cisco.com/ccp/ccp/` for this version. 
+
 5. Initialise Terraform
 
 ` terraform init`
