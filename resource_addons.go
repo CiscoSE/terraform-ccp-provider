@@ -38,7 +38,7 @@ func resourceAddons() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"dashboard": &schema.Schema{
+			"kubernetes_dashboard": &schema.Schema{
 				Type:     schema.TypeBool,
 				Required: true,
 			},
@@ -59,6 +59,10 @@ func resourceAddons() *schema.Resource {
 				Required: true,
 			},
 			"kubeflow": &schema.Schema{
+				Type:     schema.TypeBool,
+				Required: true,
+			},
+			"hx_csi": &schema.Schema{
 				Type:     schema.TypeBool,
 				Required: true,
 			},
@@ -108,7 +112,7 @@ func resourceAddonsCreate(d *schema.ResourceData, m interface{}) error {
 
 	client := m.(*ccp.Client)
 
-	if d.Get("dashboard").(bool) {
+	if d.Get("kubernetes_dashboard").(bool) {
 		err := client.InstallAddon(d.Get("uuid").(string), "kubernetes-dashboard")
 
 		if err != nil {
@@ -123,13 +127,13 @@ func resourceAddonsCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if d.Get("monitoring").(bool) {
-		err := client.InstallAddon(d.Get("uuid").(string), "ccp-monitor")
+		err := client.InstallAddon(d.Get("uuid").(string), "monitoring")
 
 		if err != nil {
 			return errors.New(err.Error())
 		}
 	} else {
-		err := client.DeleteAddon(d.Get("uuid").(string), "ccp-monitor")
+		err := client.DeleteAddon(d.Get("uuid").(string), "monitoring")
 
 		if err != nil {
 			return errors.New(err.Error())
@@ -137,13 +141,13 @@ func resourceAddonsCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if d.Get("logging").(bool) {
-		err := client.InstallAddon(d.Get("uuid").(string), "ccp-efk")
+		err := client.InstallAddon(d.Get("uuid").(string), "logging")
 
 		if err != nil {
 			return errors.New(err.Error())
 		}
 	} else {
-		err := client.DeleteAddon(d.Get("uuid").(string), "ccp-efk")
+		err := client.DeleteAddon(d.Get("uuid").(string), "logging")
 
 		if err != nil {
 			return errors.New(err.Error())
@@ -151,13 +155,13 @@ func resourceAddonsCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if d.Get("kubeflow").(bool) {
-		err := client.InstallAddon(d.Get("uuid").(string), "ccp-kubeflow")
+		err := client.InstallAddon(d.Get("uuid").(string), "kubeflow")
 
 		if err != nil {
 			return errors.New(err.Error())
 		}
 	} else {
-		err := client.DeleteAddon(d.Get("uuid").(string), "ccp-kubeflow")
+		err := client.DeleteAddon(d.Get("uuid").(string), "kubeflow")
 
 		if err != nil {
 			return errors.New(err.Error())
@@ -187,6 +191,20 @@ func resourceAddonsCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	} else {
 		err := client.DeleteAddon(d.Get("uuid").(string), "harbor")
+
+		if err != nil {
+			return errors.New(err.Error())
+		}
+	}
+
+	if d.Get("hx_csi").(bool) {
+		err := client.InstallAddon(d.Get("uuid").(string), "hx-csi")
+
+		if err != nil {
+			return errors.New(err.Error())
+		}
+	} else {
+		err := client.DeleteAddon(d.Get("uuid").(string), "hx-csi")
 
 		if err != nil {
 			return errors.New(err.Error())
@@ -229,7 +247,7 @@ func resourceAddonsUpdate(d *schema.ResourceData, m interface{}) error {
 
 	client := m.(*ccp.Client)
 
-	if d.Get("dashboard").(bool) {
+	if d.Get("kubernetes_dashboard").(bool) {
 		err := client.InstallAddon(d.Get("uuid").(string), "kubernetes-dashboard")
 
 		if err != nil {
@@ -244,13 +262,13 @@ func resourceAddonsUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if d.Get("monitoring").(bool) {
-		err := client.InstallAddon(d.Get("uuid").(string), "ccp-monitor")
+		err := client.InstallAddon(d.Get("uuid").(string), "monitoring")
 
 		if err != nil {
 			return errors.New(err.Error())
 		}
 	} else {
-		err := client.DeleteAddon(d.Get("uuid").(string), "ccp-monitor")
+		err := client.DeleteAddon(d.Get("uuid").(string), "monitoring")
 
 		if err != nil {
 			return errors.New(err.Error())
@@ -258,13 +276,13 @@ func resourceAddonsUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if d.Get("logging").(bool) {
-		err := client.InstallAddon(d.Get("uuid").(string), "ccp-efk")
+		err := client.InstallAddon(d.Get("uuid").(string), "logging")
 
 		if err != nil {
 			return errors.New(err.Error())
 		}
 	} else {
-		err := client.DeleteAddon(d.Get("uuid").(string), "ccp-efk")
+		err := client.DeleteAddon(d.Get("uuid").(string), "logging")
 
 		if err != nil {
 			return errors.New(err.Error())
@@ -272,13 +290,13 @@ func resourceAddonsUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if d.Get("kubeflow").(bool) {
-		err := client.InstallAddon(d.Get("uuid").(string), "ccp-kubeflow")
+		err := client.InstallAddon(d.Get("uuid").(string), "kubeflow")
 
 		if err != nil {
 			return errors.New(err.Error())
 		}
 	} else {
-		err := client.DeleteAddon(d.Get("uuid").(string), "ccp-kubeflow")
+		err := client.DeleteAddon(d.Get("uuid").(string), "kubeflow")
 
 		if err != nil {
 			return errors.New(err.Error())
@@ -314,6 +332,20 @@ func resourceAddonsUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
+	if d.Get("hx_csi").(bool) {
+		err := client.InstallAddon(d.Get("uuid").(string), "hx-csi")
+
+		if err != nil {
+			return errors.New(err.Error())
+		}
+	} else {
+		err := client.DeleteAddon(d.Get("uuid").(string), "hx-csi")
+
+		if err != nil {
+			return errors.New(err.Error())
+		}
+	}
+
 	clusterAddons, err := client.GetClusterInstalledAddons(d.Get("uuid").(string))
 
 	if err != nil {
@@ -334,19 +366,19 @@ func resourceAddonsDelete(d *schema.ResourceData, m interface{}) error {
 		return errors.New("Can't delete addon - Kubernetes Dashboard. " + err.Error())
 	}
 
-	err = client.DeleteAddon(d.Get("uuid").(string), "ccp-monitor")
+	err = client.DeleteAddon(d.Get("uuid").(string), "monitoring")
 
 	if err != nil {
 		return errors.New("Can't delete addon - Monitoring. " + err.Error())
 	}
 
-	err = client.DeleteAddon(d.Get("uuid").(string), "ccp-efk")
+	err = client.DeleteAddon(d.Get("uuid").(string), "logging")
 
 	if err != nil {
 		return errors.New("Can't delete addon - Logging. " + err.Error())
 	}
 
-	err = client.DeleteAddon(d.Get("uuid").(string), "ccp-kubeflow")
+	err = client.DeleteAddon(d.Get("uuid").(string), "kubeflow")
 
 	if err != nil {
 		return errors.New("Can't delete addon - Kubeflow. " + err.Error())
@@ -362,6 +394,12 @@ func resourceAddonsDelete(d *schema.ResourceData, m interface{}) error {
 
 	if err != nil {
 		return errors.New("Can't delete addon - Harbor. " + err.Error())
+	}
+
+	err = client.DeleteAddon(d.Get("uuid").(string), "hx-csi")
+
+	if err != nil {
+		return errors.New("Can't delete addon - HX-CSI. " + err.Error())
 	}
 
 	d.SetId("")
