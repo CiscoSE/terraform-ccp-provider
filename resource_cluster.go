@@ -20,7 +20,6 @@ package main
 
 import (
 	"errors"
-	"log"
 
 	"github.com/CiscoSE/ccp-client-library/ccp"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -378,33 +377,41 @@ func resourceCluster() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
-			"kubernetes_dashboard": &schema.Schema{
-				Type:     schema.TypeBool,
+			"addons": &schema.Schema{
+				Type:     schema.TypeList,
 				Required: true,
-			},
-			"monitoring": &schema.Schema{
-				Type:     schema.TypeBool,
-				Required: true,
-			},
-			"logging": &schema.Schema{
-				Type:     schema.TypeBool,
-				Required: true,
-			},
-			"istio": &schema.Schema{
-				Type:     schema.TypeBool,
-				Required: true,
-			},
-			"harbor": &schema.Schema{
-				Type:     schema.TypeBool,
-				Required: true,
-			},
-			"kubeflow": &schema.Schema{
-				Type:     schema.TypeBool,
-				Required: true,
-			},
-			"hx_csi": &schema.Schema{
-				Type:     schema.TypeBool,
-				Required: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"kubernetes_dashboard": &schema.Schema{
+							Type:     schema.TypeBool,
+							Required: true,
+						},
+						"monitoring": &schema.Schema{
+							Type:     schema.TypeBool,
+							Required: true,
+						},
+						"logging": &schema.Schema{
+							Type:     schema.TypeBool,
+							Required: true,
+						},
+						"istio": &schema.Schema{
+							Type:     schema.TypeBool,
+							Required: true,
+						},
+						"harbor": &schema.Schema{
+							Type:     schema.TypeBool,
+							Required: true,
+						},
+						"kubeflow": &schema.Schema{
+							Type:     schema.TypeBool,
+							Required: true,
+						},
+						"hx_csi": &schema.Schema{
+							Type:     schema.TypeBool,
+							Required: true,
+						},
+					},
+				},
 			},
 			"addon_details": &schema.Schema{
 				Type:     schema.TypeList,
@@ -714,16 +721,24 @@ func resourceClusterCreate(d *schema.ResourceData, m interface{}) error {
 		return errors.New(err.Error())
 	}
 
-	log.Printf("[DEBUG FROM CLUSTER: %s", *cluster)
-	log.Printf("[DEBUG FROM CLUSTER: %+v", *cluster)
-
 	//Check no conflicts exist - CCP does not allow Kubeflow or Harbor to be enabled when Istio is enabled
 
-	if d.Get("istio").(bool) && (d.Get("harbor").(bool) || d.Get("kubeflow").(bool)) {
+	addons := d.Get("addons").([]interface{})
+	addonKeys := addons[0].(map[string]interface{})
+
+	kubernetes_dashboard := addonKeys["kubernetes_dashboard"].(bool)
+	monitoring := addonKeys["monitoring"].(bool)
+	logging := addonKeys["logging"].(bool)
+	istio := addonKeys["istio"].(bool)
+	harbor := addonKeys["harbor"].(bool)
+	kubeflow := addonKeys["kubeflow"].(bool)
+	hx_csi := addonKeys["hx_csi"].(bool)
+
+	if istio && (harbor || kubeflow) {
 		return errors.New("Kubeflow and Harbor cannot be enabled when Istio is enabled")
 	}
 
-	if d.Get("kubernetes_dashboard").(bool) {
+	if kubernetes_dashboard {
 		err := client.InstallAddon(uuid, "kubernetes-dashboard")
 
 		if err != nil {
@@ -737,7 +752,7 @@ func resourceClusterCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	if d.Get("monitoring").(bool) {
+	if monitoring {
 		err := client.InstallAddon(uuid, "monitoring")
 
 		if err != nil {
@@ -751,7 +766,7 @@ func resourceClusterCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	if d.Get("logging").(bool) {
+	if logging {
 		err := client.InstallAddon(uuid, "logging")
 
 		if err != nil {
@@ -765,7 +780,7 @@ func resourceClusterCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	if d.Get("kubeflow").(bool) {
+	if kubeflow {
 		err := client.InstallAddon(uuid, "kubeflow")
 
 		if err != nil {
@@ -779,7 +794,7 @@ func resourceClusterCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	if d.Get("istio").(bool) {
+	if istio {
 		err := client.InstallAddon(uuid, "istio")
 		if err != nil {
 			return errors.New(err.Error())
@@ -794,7 +809,7 @@ func resourceClusterCreate(d *schema.ResourceData, m interface{}) error {
 
 	}
 
-	if d.Get("harbor").(bool) {
+	if harbor {
 		err := client.InstallAddon(uuid, "harbor")
 
 		if err != nil {
@@ -808,7 +823,7 @@ func resourceClusterCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	if d.Get("hx_csi").(bool) {
+	if hx_csi {
 		err := client.InstallAddon(uuid, "hx-csi")
 
 		if err != nil {
@@ -823,8 +838,6 @@ func resourceClusterCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	clusterAddons, err := client.GetClusterInstalledAddons(uuid)
-
-	log.Printf("[DEBUG]*********** K8s Install %s ", *clusterAddons)
 
 	if err != nil {
 		return errors.New(err.Error())
@@ -892,76 +905,90 @@ func resourceClusterUpdate(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return errors.New("UNABLE TO RETRIEVE DETAILS FOR CLUSTER: " + d.Get("name").(string))
 	}
+
 	//Check no conflicts exist - CCP does not allow Kubeflow or Harbor to be enabled when Istio is enabled
 
-	if d.Get("istio").(bool) && (d.Get("harbor").(bool) || d.Get("kubeflow").(bool)) {
+	addons := d.Get("addons").([]interface{})
+	addonKeys := addons[0].(map[string]interface{})
+
+	kubernetes_dashboard := addonKeys["kubernetes_dashboard"].(bool)
+	monitoring := addonKeys["monitoring"].(bool)
+	logging := addonKeys["logging"].(bool)
+	istio := addonKeys["istio"].(bool)
+	harbor := addonKeys["harbor"].(bool)
+	kubeflow := addonKeys["kubeflow"].(bool)
+	hx_csi := addonKeys["hx_csi"].(bool)
+
+	uuid := d.Get("uuid").(string)
+
+	if istio && (harbor || kubeflow) {
 		return errors.New("Kubeflow and Harbor cannot be enabled when Istio is enabled")
 	}
 
-	if d.Get("kubernetes_dashboard").(bool) {
-		err := client.InstallAddon(d.Get("uuid").(string), "kubernetes-dashboard")
+	if kubernetes_dashboard {
+		err := client.InstallAddon(uuid, "kubernetes-dashboard")
 
 		if err != nil {
 			return errors.New(err.Error())
 		}
 	} else {
-		err := client.DeleteAddon(d.Get("uuid").(string), "kubernetes-dashboard")
+		err := client.DeleteAddon(uuid, "kubernetes-dashboard")
 
 		if err != nil {
 			return errors.New(err.Error())
 		}
 	}
 
-	if d.Get("monitoring").(bool) {
-		err := client.InstallAddon(d.Get("uuid").(string), "monitoring")
+	if monitoring {
+		err := client.InstallAddon(uuid, "monitoring")
 
 		if err != nil {
 			return errors.New(err.Error())
 		}
 	} else {
-		err := client.DeleteAddon(d.Get("uuid").(string), "monitoring")
+		err := client.DeleteAddon(uuid, "monitoring")
 
 		if err != nil {
 			return errors.New(err.Error())
 		}
 	}
 
-	if d.Get("logging").(bool) {
-		err := client.InstallAddon(d.Get("uuid").(string), "logging")
+	if logging {
+		err := client.InstallAddon(uuid, "logging")
 
 		if err != nil {
 			return errors.New(err.Error())
 		}
 	} else {
-		err := client.DeleteAddon(d.Get("uuid").(string), "logging")
+		err := client.DeleteAddon(uuid, "logging")
 
 		if err != nil {
 			return errors.New(err.Error())
 		}
 	}
 
-	if d.Get("kubeflow").(bool) {
-		err := client.InstallAddon(d.Get("uuid").(string), "kubeflow")
+	if kubeflow {
+		err := client.InstallAddon(uuid, "kubeflow")
 
 		if err != nil {
 			return errors.New(err.Error())
 		}
 	} else {
-		err := client.DeleteAddon(d.Get("uuid").(string), "kubeflow")
+		err := client.DeleteAddon(uuid, "kubeflow")
 
 		if err != nil {
 			return errors.New(err.Error())
 		}
 	}
 
-	if d.Get("istio").(bool) {
-		err := client.InstallAddon(d.Get("uuid").(string), "istio")
+	if istio {
+		err := client.InstallAddon(uuid, "istio")
 		if err != nil {
 			return errors.New(err.Error())
 		}
 
 	} else {
-		err := client.DeleteAddon(d.Get("uuid").(string), "istio")
+		err := client.DeleteAddon(uuid, "istio")
 
 		if err != nil {
 			return errors.New(err.Error())
@@ -969,28 +996,28 @@ func resourceClusterUpdate(d *schema.ResourceData, m interface{}) error {
 
 	}
 
-	if d.Get("harbor").(bool) {
-		err := client.InstallAddon(d.Get("uuid").(string), "harbor")
+	if harbor {
+		err := client.InstallAddon(uuid, "harbor")
 
 		if err != nil {
 			return errors.New(err.Error())
 		}
 	} else {
-		err := client.DeleteAddon(d.Get("uuid").(string), "harbor")
+		err := client.DeleteAddon(uuid, "harbor")
 
 		if err != nil {
 			return errors.New(err.Error())
 		}
 	}
 
-	if d.Get("hx_csi").(bool) {
-		err := client.InstallAddon(d.Get("uuid").(string), "hx-csi")
+	if hx_csi {
+		err := client.InstallAddon(uuid, "hx-csi")
 
 		if err != nil {
 			return errors.New(err.Error())
 		}
 	} else {
-		err := client.DeleteAddon(d.Get("uuid").(string), "hx-csi")
+		err := client.DeleteAddon(uuid, "hx-csi")
 
 		if err != nil {
 			return errors.New(err.Error())
