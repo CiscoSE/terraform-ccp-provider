@@ -753,13 +753,13 @@ func resourceClusterCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if monitoring {
-		err := client.InstallAddon(uuid, "monitoring")
+		err := client.InstallAddon(uuid, "ccp-monitor")
 
 		if err != nil {
 			return errors.New(err.Error())
 		}
 	} else {
-		err := client.DeleteAddon(uuid, "monitoring")
+		err := client.DeleteAddon(uuid, "ccp-monitor")
 
 		if err != nil {
 			return errors.New(err.Error())
@@ -767,13 +767,13 @@ func resourceClusterCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if logging {
-		err := client.InstallAddon(uuid, "logging")
+		err := client.InstallAddon(uuid, "ccp-efk")
 
 		if err != nil {
 			return errors.New(err.Error())
 		}
 	} else {
-		err := client.DeleteAddon(uuid, "logging")
+		err := client.DeleteAddon(uuid, "ccp-efk")
 
 		if err != nil {
 			return errors.New(err.Error())
@@ -781,13 +781,13 @@ func resourceClusterCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if kubeflow {
-		err := client.InstallAddon(uuid, "kubeflow")
+		err := client.InstallAddon(uuid, "ccp-kubeflow")
 
 		if err != nil {
 			return errors.New(err.Error())
 		}
 	} else {
-		err := client.DeleteAddon(uuid, "kubeflow")
+		err := client.DeleteAddon(uuid, "ccp-kubeflow")
 
 		if err != nil {
 			return errors.New(err.Error())
@@ -921,106 +921,144 @@ func resourceClusterUpdate(d *schema.ResourceData, m interface{}) error {
 
 	uuid := d.Get("uuid").(string)
 
+	// come back to this
+	// check addonKeys["istio"].(bool) || addonKeys["kubeflow"].(bool)
+	//
 	if istio && (harbor || kubeflow) {
 		return errors.New("Kubeflow and Harbor cannot be enabled when Istio is enabled")
 	}
 
-	if kubernetes_dashboard {
-		err := client.InstallAddon(uuid, "kubernetes-dashboard")
+	// dashboard
+	if d.HasChange("addons.0.kubernetes_dashboard") {
+		// _, kubernetes_dashboard := d.GetChange("addons.kubernetes_dashboard")
 
-		if err != nil {
-			return errors.New(err.Error())
-		}
-	} else {
-		err := client.DeleteAddon(uuid, "kubernetes-dashboard")
+		if kubernetes_dashboard {
+			err := client.InstallAddon(uuid, "kubernetes-dashboard")
 
-		if err != nil {
-			return errors.New(err.Error())
-		}
-	}
+			if err != nil {
+				return errors.New(err.Error())
+			}
+		} else {
+			err := client.DeleteAddon(uuid, "kubernetes-dashboard")
 
-	if monitoring {
-		err := client.InstallAddon(uuid, "monitoring")
-
-		if err != nil {
-			return errors.New(err.Error())
-		}
-	} else {
-		err := client.DeleteAddon(uuid, "monitoring")
-
-		if err != nil {
-			return errors.New(err.Error())
+			if err != nil {
+				return errors.New(err.Error())
+			}
 		}
 	}
 
-	if logging {
-		err := client.InstallAddon(uuid, "logging")
+	// monitoring
+	if d.HasChange("addons.0.monitoring") {
+		// _, monitoring := d.GetChange("addons.monitoring")
 
-		if err != nil {
-			return errors.New(err.Error())
-		}
-	} else {
-		err := client.DeleteAddon(uuid, "logging")
+		if monitoring {
+			err := client.InstallAddon(uuid, "ccp-monitor")
 
-		if err != nil {
-			return errors.New(err.Error())
-		}
-	}
+			if err != nil {
+				return errors.New(err.Error())
+			}
+		} else {
+			err := client.DeleteAddon(uuid, "ccp-monitor")
 
-	if kubeflow {
-		err := client.InstallAddon(uuid, "kubeflow")
-
-		if err != nil {
-			return errors.New(err.Error())
-		}
-	} else {
-		err := client.DeleteAddon(uuid, "kubeflow")
-
-		if err != nil {
-			return errors.New(err.Error())
+			if err != nil {
+				return errors.New(err.Error())
+			}
 		}
 	}
 
-	if istio {
-		err := client.InstallAddon(uuid, "istio")
-		if err != nil {
-			return errors.New(err.Error())
-		}
+	// logging
+	if d.HasChange("addons.0.logging") {
+		// _, logging := d.GetChange("addons.logging")
 
-	} else {
-		err := client.DeleteAddon(uuid, "istio")
+		if logging {
+			err := client.InstallAddon(uuid, "ccp-efk")
 
-		if err != nil {
-			return errors.New(err.Error())
-		}
+			if err != nil {
+				return errors.New(err.Error())
+			}
+		} else {
+			err := client.DeleteAddon(uuid, "ccp-efk")
 
-	}
-
-	if harbor {
-		err := client.InstallAddon(uuid, "harbor")
-
-		if err != nil {
-			return errors.New(err.Error())
-		}
-	} else {
-		err := client.DeleteAddon(uuid, "harbor")
-
-		if err != nil {
-			return errors.New(err.Error())
+			if err != nil {
+				return errors.New(err.Error())
+			}
 		}
 	}
 
-	if hx_csi {
-		err := client.InstallAddon(uuid, "hx-csi")
+	// kubeflow
+	if d.HasChange("addons.0.kubeflow") {
+		// _, kubeflow := d.GetChange("addons.kubeflow")
 
-		if err != nil {
-			return errors.New(err.Error())
+		if kubeflow {
+			err := client.InstallAddon(uuid, "ccp-kubeflow")
+
+			if err != nil {
+				return errors.New(err.Error())
+			}
+		} else {
+			err := client.DeleteAddon(uuid, "ccp-kubeflow")
+
+			if err != nil {
+				return errors.New(err.Error())
+			}
 		}
-	} else {
-		err := client.DeleteAddon(uuid, "hx-csi")
+	}
 
-		if err != nil {
-			return errors.New(err.Error())
+	// istio
+	if d.HasChange("addons.0.istio") {
+		// _, istio := d.GetChange("addons.istio")
+
+		if istio {
+			err := client.InstallAddon(uuid, "istio")
+			if err != nil {
+				return errors.New(err.Error())
+			}
+
+		} else {
+			err := client.DeleteAddon(uuid, "istio")
+
+			if err != nil {
+				return errors.New(err.Error())
+			}
+
+		}
+	}
+
+	// harbor
+	if d.HasChange("addons.0.harbor") {
+		// _, harbor := d.GetChange("addons.harbor")
+
+		if harbor {
+			err := client.InstallAddon(uuid, "harbor")
+
+			if err != nil {
+				return errors.New(err.Error())
+			}
+		} else {
+			err := client.DeleteAddon(uuid, "harbor")
+
+			if err != nil {
+				return errors.New(err.Error())
+			}
+		}
+	}
+
+	// hxcsi
+	if d.HasChange("addons.0.hx_csi") {
+		// _, hx_csi := d.GetChange("addons.hx_csi")
+
+		if hx_csi {
+			err := client.InstallAddon(uuid, "hx-csi")
+
+			if err != nil {
+				return errors.New(err.Error())
+			}
+		} else {
+			err := client.DeleteAddon(uuid, "hx-csi")
+
+			if err != nil {
+				return errors.New(err.Error())
+			}
 		}
 	}
 
