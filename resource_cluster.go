@@ -377,6 +377,74 @@ func resourceCluster() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
+			"addons": &schema.Schema{
+				Type:     schema.TypeList,
+				Required: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"kubernetes_dashboard": &schema.Schema{
+							Type:     schema.TypeBool,
+							Required: true,
+						},
+						"monitoring": &schema.Schema{
+							Type:     schema.TypeBool,
+							Required: true,
+						},
+						"logging": &schema.Schema{
+							Type:     schema.TypeBool,
+							Required: true,
+						},
+						"istio": &schema.Schema{
+							Type:     schema.TypeBool,
+							Required: true,
+						},
+						"harbor": &schema.Schema{
+							Type:     schema.TypeBool,
+							Required: true,
+						},
+						"kubeflow": &schema.Schema{
+							Type:     schema.TypeBool,
+							Required: true,
+						},
+						"hx_csi": &schema.Schema{
+							Type:     schema.TypeBool,
+							Required: true,
+						},
+					},
+				},
+			},
+			"addon_details": &schema.Schema{
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": &schema.Schema{
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"namespace": &schema.Schema{
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"display_name": &schema.Schema{
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"description": &schema.Schema{
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"helm_status": &schema.Schema{
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"status": &schema.Schema{
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -653,7 +721,129 @@ func resourceClusterCreate(d *schema.ResourceData, m interface{}) error {
 		return errors.New(err.Error())
 	}
 
-	return setClusterResourceData(d, cluster)
+	//Check no conflicts exist - CCP does not allow Kubeflow or Harbor to be enabled when Istio is enabled
+
+	addons := d.Get("addons").([]interface{})
+	addonKeys := addons[0].(map[string]interface{})
+
+	kubernetes_dashboard := addonKeys["kubernetes_dashboard"].(bool)
+	monitoring := addonKeys["monitoring"].(bool)
+	logging := addonKeys["logging"].(bool)
+	istio := addonKeys["istio"].(bool)
+	harbor := addonKeys["harbor"].(bool)
+	kubeflow := addonKeys["kubeflow"].(bool)
+	hx_csi := addonKeys["hx_csi"].(bool)
+
+	if istio && (harbor || kubeflow) {
+		return errors.New("Kubeflow and Harbor cannot be enabled when Istio is enabled")
+	}
+
+	if kubernetes_dashboard {
+		err := client.InstallAddon(uuid, "kubernetes-dashboard")
+
+		if err != nil {
+			return errors.New(err.Error())
+		}
+	} else {
+		err := client.DeleteAddon(uuid, "kubernetes-dashboard")
+
+		if err != nil {
+			return errors.New(err.Error())
+		}
+	}
+
+	if monitoring {
+		err := client.InstallAddon(uuid, "ccp-monitor")
+
+		if err != nil {
+			return errors.New(err.Error())
+		}
+	} else {
+		err := client.DeleteAddon(uuid, "ccp-monitor")
+
+		if err != nil {
+			return errors.New(err.Error())
+		}
+	}
+
+	if logging {
+		err := client.InstallAddon(uuid, "ccp-efk")
+
+		if err != nil {
+			return errors.New(err.Error())
+		}
+	} else {
+		err := client.DeleteAddon(uuid, "ccp-efk")
+
+		if err != nil {
+			return errors.New(err.Error())
+		}
+	}
+
+	if kubeflow {
+		err := client.InstallAddon(uuid, "ccp-kubeflow")
+
+		if err != nil {
+			return errors.New(err.Error())
+		}
+	} else {
+		err := client.DeleteAddon(uuid, "ccp-kubeflow")
+
+		if err != nil {
+			return errors.New(err.Error())
+		}
+	}
+
+	if istio {
+		err := client.InstallAddon(uuid, "istio")
+		if err != nil {
+			return errors.New(err.Error())
+		}
+
+	} else {
+		err := client.DeleteAddon(uuid, "istio")
+
+		if err != nil {
+			return errors.New(err.Error())
+		}
+
+	}
+
+	if harbor {
+		err := client.InstallAddon(uuid, "harbor")
+
+		if err != nil {
+			return errors.New(err.Error())
+		}
+	} else {
+		err := client.DeleteAddon(uuid, "harbor")
+
+		if err != nil {
+			return errors.New(err.Error())
+		}
+	}
+
+	if hx_csi {
+		err := client.InstallAddon(uuid, "hx-csi")
+
+		if err != nil {
+			return errors.New(err.Error())
+		}
+	} else {
+		err := client.DeleteAddon(uuid, "hx-csi")
+
+		if err != nil {
+			return errors.New(err.Error())
+		}
+	}
+
+	clusterAddons, err := client.GetClusterInstalledAddons(uuid)
+
+	if err != nil {
+		return errors.New(err.Error())
+	}
+
+	return setClusterResourceData(d, cluster, clusterAddons)
 }
 
 func resourceClusterRead(d *schema.ResourceData, m interface{}) error {
@@ -666,7 +856,13 @@ func resourceClusterRead(d *schema.ResourceData, m interface{}) error {
 		return errors.New("UNABLE TO RETRIEVE DETAILS FOR CLUSTER: " + d.Get("name").(string))
 	}
 
-	return setClusterResourceData(d, cluster)
+	clusterAddons, err := client.GetClusterInstalledAddons(d.Get("uuid").(string))
+
+	/*if err != nil {
+		return errors.New("UNABLE TO RETRIEVE DETAILS FOR CLUSTER ADDONS: " + d.Get("uuid").(string))
+	}
+	*/
+	return setClusterResourceData(d, cluster, clusterAddons)
 
 }
 
@@ -710,7 +906,169 @@ func resourceClusterUpdate(d *schema.ResourceData, m interface{}) error {
 		return errors.New("UNABLE TO RETRIEVE DETAILS FOR CLUSTER: " + d.Get("name").(string))
 	}
 
-	return setClusterResourceData(d, cluster)
+	//Check no conflicts exist - CCP does not allow Kubeflow or Harbor to be enabled when Istio is enabled
+
+	addons := d.Get("addons").([]interface{})
+	addonKeys := addons[0].(map[string]interface{})
+
+	kubernetes_dashboard := addonKeys["kubernetes_dashboard"].(bool)
+	monitoring := addonKeys["monitoring"].(bool)
+	logging := addonKeys["logging"].(bool)
+	istio := addonKeys["istio"].(bool)
+	harbor := addonKeys["harbor"].(bool)
+	kubeflow := addonKeys["kubeflow"].(bool)
+	hx_csi := addonKeys["hx_csi"].(bool)
+
+	uuid := d.Get("uuid").(string)
+
+	// come back to this
+	// check addonKeys["istio"].(bool) || addonKeys["kubeflow"].(bool)
+	//
+	if istio && (harbor || kubeflow) {
+		return errors.New("Kubeflow and Harbor cannot be enabled when Istio is enabled")
+	}
+
+	// dashboard
+	if d.HasChange("addons.0.kubernetes_dashboard") {
+		// _, kubernetes_dashboard := d.GetChange("addons.kubernetes_dashboard")
+
+		if kubernetes_dashboard {
+			err := client.InstallAddon(uuid, "kubernetes-dashboard")
+
+			if err != nil {
+				return errors.New(err.Error())
+			}
+		} else {
+			err := client.DeleteAddon(uuid, "kubernetes-dashboard")
+
+			if err != nil {
+				return errors.New(err.Error())
+			}
+		}
+	}
+
+	// monitoring
+	if d.HasChange("addons.0.monitoring") {
+		// _, monitoring := d.GetChange("addons.monitoring")
+
+		if monitoring {
+			err := client.InstallAddon(uuid, "ccp-monitor")
+
+			if err != nil {
+				return errors.New(err.Error())
+			}
+		} else {
+			err := client.DeleteAddon(uuid, "ccp-monitor")
+
+			if err != nil {
+				return errors.New(err.Error())
+			}
+		}
+	}
+
+	// logging
+	if d.HasChange("addons.0.logging") {
+		// _, logging := d.GetChange("addons.logging")
+
+		if logging {
+			err := client.InstallAddon(uuid, "ccp-efk")
+
+			if err != nil {
+				return errors.New(err.Error())
+			}
+		} else {
+			err := client.DeleteAddon(uuid, "ccp-efk")
+
+			if err != nil {
+				return errors.New(err.Error())
+			}
+		}
+	}
+
+	// kubeflow
+	if d.HasChange("addons.0.kubeflow") {
+		// _, kubeflow := d.GetChange("addons.kubeflow")
+
+		if kubeflow {
+			err := client.InstallAddon(uuid, "ccp-kubeflow")
+
+			if err != nil {
+				return errors.New(err.Error())
+			}
+		} else {
+			err := client.DeleteAddon(uuid, "ccp-kubeflow")
+
+			if err != nil {
+				return errors.New(err.Error())
+			}
+		}
+	}
+
+	// istio
+	if d.HasChange("addons.0.istio") {
+		// _, istio := d.GetChange("addons.istio")
+
+		if istio {
+			err := client.InstallAddon(uuid, "istio")
+			if err != nil {
+				return errors.New(err.Error())
+			}
+
+		} else {
+			err := client.DeleteAddon(uuid, "istio")
+
+			if err != nil {
+				return errors.New(err.Error())
+			}
+
+		}
+	}
+
+	// harbor
+	if d.HasChange("addons.0.harbor") {
+		// _, harbor := d.GetChange("addons.harbor")
+
+		if harbor {
+			err := client.InstallAddon(uuid, "harbor")
+
+			if err != nil {
+				return errors.New(err.Error())
+			}
+		} else {
+			err := client.DeleteAddon(uuid, "harbor")
+
+			if err != nil {
+				return errors.New(err.Error())
+			}
+		}
+	}
+
+	// hxcsi
+	if d.HasChange("addons.0.hx_csi") {
+		// _, hx_csi := d.GetChange("addons.hx_csi")
+
+		if hx_csi {
+			err := client.InstallAddon(uuid, "hx-csi")
+
+			if err != nil {
+				return errors.New(err.Error())
+			}
+		} else {
+			err := client.DeleteAddon(uuid, "hx-csi")
+
+			if err != nil {
+				return errors.New(err.Error())
+			}
+		}
+	}
+
+	clusterAddons, err := client.GetClusterInstalledAddons(d.Get("uuid").(string))
+
+	if err != nil {
+		return errors.New(err.Error())
+	}
+
+	return setClusterResourceData(d, cluster, clusterAddons)
 
 }
 
@@ -728,7 +1086,7 @@ func resourceClusterDelete(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
-func setClusterResourceData(d *schema.ResourceData, u *ccp.Cluster) error {
+func setClusterResourceData(d *schema.ResourceData, u *ccp.Cluster, clusterAddons *ccp.ClusterInstalledAddons) error {
 
 	if err := d.Set("uuid", u.UUID); err != nil {
 		return errors.New("CANNOT SET UUID")
@@ -969,6 +1327,33 @@ func setClusterResourceData(d *schema.ResourceData, u *ccp.Cluster) error {
 	if err := d.Set("aws_iam_enabled", u.AWSIamEnabled); err != nil {
 		return errors.New("CANNOT SET AWS IAM VALUE")
 	}
+
+	// The boolean values toggle the installation or removal of the addons. Still wanted to include the
+	// status of each installed addon for reference which is the function of this next piece of code
+	/*
+		addonDetailsOut := make([]interface{}, 0, 0)
+		addonDetailsIn := make(map[string]interface{})
+
+		results := &clusterAddons.Results
+
+		for _, addons := range *results {
+
+			addonDetailsIn = make(map[string]interface{})
+
+			addonDetailsIn["helm_status"] = addons.AddonStatus.HelmStatus
+			addonDetailsIn["status"] = addons.AddonStatus.Status
+			addonDetailsIn["name"] = addons.Name
+			addonDetailsIn["namespace"] = addons.Namespace
+			addonDetailsIn["description"] = addons.Description
+			addonDetailsIn["display_name"] = addons.DisplayName
+
+			addonDetailsOut = append(addonDetailsOut, addonDetailsIn)
+
+		}
+
+		if err := d.Set("addon_details", addonDetailsOut); err != nil {
+			return errors.New("CANNOT SET ADDON DETAILS")
+		}*/
 
 	return nil
 }
